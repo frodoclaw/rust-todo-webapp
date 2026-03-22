@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rust Todo Webapp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-900">
+    <main class="mx-auto flex min-h-screen max-w-2xl items-center px-4 py-10">
+      <section
+        x-data="todoApp()"
+        x-init="loadTodos()"
+        class="w-full rounded-3xl bg-white p-6 shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 sm:p-8"
+      >
+        <div class="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium uppercase tracking-[0.25em] text-slate-500">Axum + Alpine</p>
+            <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Todo List</h1>
+          </div>
+          <div class="text-right text-sm text-slate-500">
+            <p><span x-text="remainingCount"></span> remaining</p>
+            <p><span x-text="completedCount"></span> done</p>
+          </div>
+        </div>
+
+        <form class="mb-6 flex gap-3" @submit.prevent="addTodo()">
+          <input
+            x-model="newTitle"
+            type="text"
+            name="title"
+            placeholder="What needs to be done?"
+            class="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-slate-500 focus:bg-white"
+          />
+          <button
+            type="submit"
+            class="rounded-2xl bg-slate-900 px-5 py-3 font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+            :disabled="loading"
+          >
+            Add
+          </button>
+        </form>
+
+        <template x-if="error">
+          <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" x-text="error"></div>
+        </template>
+
+        <div class="space-y-3" x-show="todos.length > 0">
+          <template x-for="todo in todos" :key="todo.id">
+            <article class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <button
+                type="button"
+                @click="toggleTodo(todo.id)"
+                class="flex h-6 w-6 items-center justify-center rounded-full border transition"
+                :class="todo.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'"
+                :aria-label="todo.completed ? 'Mark incomplete' : 'Mark complete'"
+              >
+                ✓
+              </button>
+              <p
+                class="flex-1 text-sm sm:text-base"
+                :class="todo.completed ? 'text-slate-400 line-through' : 'text-slate-800'"
+                x-text="todo.title"
+              ></p>
+              <button
+                type="button"
+                @click="removeTodo(todo.id)"
+                class="rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+              >
+                Delete
+              </button>
+            </article>
+          </template>
+        </div>
+
+        <div
+          x-show="!loading && todos.length === 0"
+          class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-slate-500"
+        >
+          No todos yet. Add one above.
+        </div>
+      </section>
+    </main>
+
+    <script>
+      function todoApp() {
+        return {
+          todos: [],
+          newTitle: "",
+          loading: false,
+          error: "",
+          get completedCount() {
+            return this.todos.filter((todo) => todo.completed).length;
+          },
+          get remainingCount() {
+            return this.todos.filter((todo) => !todo.completed).length;
+          },
+          async loadTodos() {
+            this.loading = true;
+            this.error = "";
+            try {
+              const response = await fetch("/api/todos");
+              if (!response.ok) throw new Error("Failed to load todos");
+              this.todos = await response.json();
+            } catch (error) {
+              this.error = error.message;
+            } finally {
+              this.loading = false;
+            }
+          },
+          async addTodo() {
+            const title = this.newTitle.trim();
+            if (!title) return;
+
+            this.loading = true;
+            this.error = "";
+            try {
+              const response = await fetch("/api/todos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title }),
+              });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || "Failed to add todo");
+              this.todos.push(data);
+              this.newTitle = "";
+            } catch (error) {
+              this.error = error.message;
+            } finally {
+              this.loading = false;
+            }
+          },
+          async toggleTodo(id) {
+            this.error = "";
+            try {
+              const response = await fetch(`/api/todos/${id}/toggle`, {
+                method: "PATCH",
+              });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || "Failed to toggle todo");
+              this.todos = this.todos.map((todo) => (todo.id === id ? data : todo));
+            } catch (error) {
+              this.error = error.message;
+            }
+          },
+          async removeTodo(id) {
+            this.error = "";
+            try {
+              const response = await fetch(`/api/todos/${id}`, {
+                method: "DELETE",
+              });
+              if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to delete todo");
+              }
+              this.todos = this.todos.filter((todo) => todo.id !== id);
+            } catch (error) {
+              this.error = error.message;
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>
