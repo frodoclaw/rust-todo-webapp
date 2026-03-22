@@ -2,6 +2,17 @@
 
 Simple full-stack todo app built with Rust and Axum. The backend serves both the JSON API and the single-page frontend. Todos are persisted in a local SQLite database file via `rusqlite`, so they survive server restarts.
 
+## Live Demo
+
+- Public demo: https://b5bb3110ce9a77.lhr.life
+- GitHub repo: https://github.com/frodoclaw/rust-todo-webapp
+
+> Note: the public demo runs through a temporary tunnel, so the URL may change or go offline when the local process stops.
+
+## Screenshot
+
+![Rust Todo Webapp screenshot](docs/screenshot.png)
+
 ## Stack
 
 - Rust
