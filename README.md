@@ -9,6 +9,17 @@ Simple full-stack todo app built with Rust and Axum. The backend serves both the
 
 > Note: the public demo runs through a temporary tunnel, so the URL may change or go offline when the local process stops.
 
+## Downloads
+
+- Every push to `main` and every pull request triggers a multi-platform build on GitHub Actions.
+- Download build artifacts from the **Actions** tab: https://github.com/frodoclaw/rust-todo-webapp/actions
+- When a tag like `v0.1.0` is pushed, GitHub will also publish zipped binaries to **Releases**.
+
+Current targets:
+- Linux x86_64
+- Windows x86_64
+- macOS arm64
+
 ## Screenshot
 
 ![Rust Todo Webapp screenshot](docs/screenshot.png)
