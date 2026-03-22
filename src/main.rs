@@ -351,6 +351,6 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("time went backwards")
             .as_nanos();
-        FsPath::new("/tmp").join(format!("rust-todo-webapp-test-{nanos}.db"))
+        std::env::temp_dir().join(format!("rust-todo-webapp-test-{nanos}.db"))
     }
 }
