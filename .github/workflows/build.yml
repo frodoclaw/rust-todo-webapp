@@ -24,14 +24,30 @@ jobs:
             os: ubuntu-latest
             artifact_name: rust-todo-webapp
             asset_name: rust-todo-webapp-linux-x86_64
+            build_target: ""
+            test_command: cargo test --locked
+            build_command: cargo build --release --locked
+          - name: linux-arm64
+            os: ubuntu-latest
+            artifact_name: rust-todo-webapp
+            asset_name: rust-todo-webapp-linux-arm64
+            build_target: aarch64-unknown-linux-gnu
+            test_command: cargo test --locked
+            build_command: cargo build --release --locked --target aarch64-unknown-linux-gnu
           - name: windows-x86_64
             os: windows-latest
             artifact_name: rust-todo-webapp.exe
             asset_name: rust-todo-webapp-windows-x86_64.exe
+            build_target: ""
+            test_command: cargo test --locked
+            build_command: cargo build --release --locked
           - name: macos-arm64
             os: macos-latest
             artifact_name: rust-todo-webapp
             asset_name: rust-todo-webapp-macos-arm64
+            build_target: ""
+            test_command: cargo test --locked
+            build_command: cargo build --release --locked
 
     steps:
       - name: Checkout
@@ -39,19 +55,37 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.build_target }}
+
+      - name: Install Linux ARM64 linker
+        if: matrix.build_target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Run tests
-        run: cargo test --locked
+        run: ${{ matrix.test_command }}
 
       - name: Build release binary
-        run: cargo build --release --locked
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: ${{ matrix.build_command }}
 
-      - name: Prepare artifact directory (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Prepare artifact directory (Linux/macOS native)
+        if: runner.os != 'Windows' && matrix.build_target == ''
         shell: bash
         run: |
           mkdir -p dist
           cp target/release/${{ matrix.artifact_name }} dist/${{ matrix.asset_name }}
+          cp README.md dist/README.md
+
+      - name: Prepare artifact directory (Linux ARM64 cross build)
+        if: runner.os != 'Windows' && matrix.build_target != ''
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.build_target }}/release/${{ matrix.artifact_name }} dist/${{ matrix.asset_name }}
           cp README.md dist/README.md
 
       - name: Prepare artifact directory (Windows)

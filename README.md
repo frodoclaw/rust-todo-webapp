@@ -17,6 +17,7 @@ Simple full-stack todo app built with Rust and Axum. The backend serves both the
 
 Current targets:
 - Linux x86_64
+- Linux ARM64 / aarch64
 - Windows x86_64
 - macOS arm64
 
